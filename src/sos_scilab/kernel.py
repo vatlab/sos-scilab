@@ -55,7 +55,7 @@ if type(obj) == 1
         elseif isnan(obj)
             repr = 'None';
         else
-            repr = string(obj);
+            repr = obj;
         end
     // % isvector(A) returns logical 1 (true) if size(A) returns [1 n] or [n 1] with a nonnegative integer value n, and logical 0 (false) otherwise.
     // DONE!!
@@ -73,13 +73,13 @@ if type(obj) == 1
     // DONE!
     elseif size(obj, 'r')>1 && size(obj, 'c')>1
         savematfile( TMPDIR + '/mat2py.mat', 'obj', '-v6');
-        repr = strcat(['np.matrix(sio.loadmat(r''', TMPDIR, 'mat2py.mat'')', '[''', 'obj', '''])']);
+        repr = strcat(['np.matrix(sio.loadmat(r''', TMPDIR, '/mat2py.mat'')', '[''', 'obj', '''])']);
         // outputs: "np.matrix(sio.loadmat(r'/tmp/SCI_TMP_1607379_Bv9sEVmat2py.mat')['obj'])"
-        // ^ is this correct?
+
     elseif length(size(obj)) >= 3
         //% 3d or even higher matrix
         savematfile( TMPDIR + '/mat2py.mat', 'obj', '-v6');
-        repr = strcat(['sio.loadmat(r''', TMPDIR, 'mat2py.mat'')', '[''', 'obj', ''']']);
+        repr = strcat(['sio.loadmat(r''', TMPDIR, '/mat2py.mat'')', '[''', 'obj', ''']']);
     // % other, maybe canbe improved with the vector's block
     else
         // % not sure what this could be
@@ -133,16 +133,16 @@ elseif iscell(obj)
 elseif type(obj)==4
     if length(obj)==1
         if obj
-            repr = True;
+            repr = 'True';
         else
             repr = 'False';
         end
-        // else
-        // repr = '[';
-        // for i = 1:length(obj)
-        //     repr = strcat([repr, sos_py_repr(obj(i)), ',']);
-        // end
-        // repr = strcat([repr,']']); 
+    else
+        repr = '[';
+        for i = obj
+            repr = strcat([repr, sos_py_repr(i), ',']);
+        end
+        repr = strcat([repr,']']); 
     end
 
 // % table, table usually is also real, and can be a vector and matrix sometimes, so it needs to be put in front of them.
@@ -187,7 +187,7 @@ class sos_scilab:
         #  Converting a Python object to a scilab expression that will be executed
         #  by the scilab kernel.
         if isinstance(obj, bool):
-            return '%t' if obj else '%f'
+            return r'%t' if obj else r'%f'
         elif isinstance(obj, (int, float, str, complex)):
             return repr(obj)
         elif isinstance(obj, Sequence):
@@ -197,19 +197,20 @@ class sos_scilab:
             # if the data is of homogeneous type, let us use []
 
             if homogeneous_type(obj):
-                return '[' + ';'.join(self._scilab_repr(x) for x in obj) + ']'
+                return '[' + ' '.join(self._scilab_repr(x) for x in obj) + ']'
             else:
-                return '{' + ';'.join(self._scilab_repr(x) for x in obj) + '}'
+                return '{' + ' '.join(self._scilab_repr(x) for x in obj) + '}'
         elif obj is None:
-            return '%nan'
+            return r'%nan'
         elif isinstance(obj, dict):
             dic = tempfile.tempdir
             os.chdir(dic)
-            # need to save as .sci or convert mat to sci..?
+            # change how this is saved to be compatible with scilab
             sio.savemat('dict2mtlb.mat', {'obj': obj})
-            return 'getfield(load(fullfile(' + '\'' + dic + '\'' + ',' \
+            return 'getfield(loadmatfile(fullfile(' + '\'' + dic + '\'' + ',' \
                 + '\'dict2mtlb.mat\')), \'obj\')'
 
+        # does scilab have sets? 
         elif isinstance(obj, set):
             return '{' + ','.join(self._scilab_repr(x) for x in obj) + '}'
         elif isinstance(obj, (
@@ -232,14 +233,15 @@ class sos_scilab:
         elif isinstance(obj, np.matrixlib.defmatrix.matrix):
             dic = tempfile.tempdir
             os.chdir(dic)
-            # need to save as .sci or convert mat to sci..?
+            
+            #need struct2cell alternative
             sio.savemat('mat2mtlb.mat', {'obj': obj})
-            return 'cell2mat(struct2cell(load(fullfile(' + '\'' + dic + '\'' + ',' \
+            return 'cell2mat(struct2cell(loadmatfile(fullfile(' + '\'' + dic + '\'' + ',' \
                 + '\'mat2mtlb.mat\'))))'
         elif isinstance(obj, np.ndarray):
             dic = tempfile.tempdir
             os.chdir(dic)
-            # need to save as .sci or convert mat to sci..?
+            
             sio.savemat('ary2mtlb.mat', {'obj': obj})
             return 'sos_load_obj(fullfile(' + '\'' + dic + '\'' + ',' \
                 + '\'ary2mtlb.mat\'))'

@@ -9,8 +9,8 @@ import random
 import shutil
 import pytest
 
-@pytest.mark.skipif(not shutil.which('octave'), reason='Octave is not available')
-class TestOctaveDataExchange(NotebookTest):
+@pytest.mark.skipif(not shutil.which('scilab'), reason='Scilab is not available')
+class TestScilabDataExchange(NotebookTest):
 
     def _var_name(self):
         if not hasattr(self, '_var_idx'):
@@ -18,36 +18,40 @@ class TestOctaveDataExchange(NotebookTest):
         self._var_idx += 1
         return f'var{self._var_idx}'
 
-    def get_from_SoS(self, notebook, sos_expr):
+    def get_from_SoS(self, notebook, _scilab_repr):
         var_name = self._var_name()
-        notebook.call(f'{var_name} = {sos_expr}', kernel='SoS')
+        notebook.call(f'{var_name} = {_scilab_repr}', kernel='SoS')
         return notebook.check_output(
             f'''\
             %get {var_name}
             disp({var_name})
             ''',
-            kernel='Octave')
+            kernel='Scilab')
 
-    def put_to_SoS(self, notebook, py2_expr):
+    def put_to_SoS(self, notebook, sos_py_repr):
         var_name = self._var_name()
         notebook.call(
             f'''\
             %put {var_name}
-            {var_name} = {py2_expr}
+            {var_name} = {sos_py_repr}
             ''',
-            kernel='Octave')
+            kernel='Scilab')
         return notebook.check_output(f'print(repr({var_name}))', kernel='SoS')
 
-    def test_get_none(self, notebook):
-        assert 'NaN' == self.get_from_SoS(notebook, 'None')
+    #failed
+    def test_get_none(self, notebook): 
+        assert 'Nan' == self.get_from_SoS(notebook, 'None')
 
     def test_put_NaN(self, notebook):
-        assert 'None' == self.put_to_SoS(notebook, 'NaN')
+        assert 'None' == self.put_to_SoS(notebook, '%nan')
 
-    def test_get_int(self, notebook):
+    #failed - scilab's answers have periods after them and it is throwing it off?
+    def test_get_int(self, notebook): 
         assert 123 == int(self.get_from_SoS(notebook, '123'))
-        assert '1.2346e+12' == self.get_from_SoS(notebook, '1234567891234')
+        assert '1234567891234' == self.get_from_SoS(notebook, '1234567891234')
+        #above: scientific notation for 1.2346e..12?
 
+    #failed    
     def test_put_int(self, notebook):
         assert 123 == int(self.put_to_SoS(notebook, '123'))
         assert 1234567891234 == int(self.put_to_SoS(notebook, '1234567891234'))
@@ -57,27 +61,27 @@ class TestOctaveDataExchange(NotebookTest):
 
     def test_get_double(self, notebook):
         val = str(random.random())
-        notebook.call('format long', kernel='Octave')
+        notebook.call('format["e"]', kernel='Scilab')
         assert abs(float(val) - float(self.get_from_SoS(notebook, val))) < 1e-10
 
     def test_put_double(self, notebook):
         val = str(random.random())
-        notebook.call('format long', kernel='Octave')
+        notebook.call('format long', kernel='Scilab')
         assert abs(float(val) - float(self.put_to_SoS(notebook, val))) < 1e-10
 
     def test_get_logic(self, notebook):
-        assert '1' == self.get_from_SoS(notebook, 'True')
-        assert '0' == self.get_from_SoS(notebook, 'False')
+        assert 'T' == self.get_from_SoS(notebook, 'True')
+        assert 'F' == self.get_from_SoS(notebook, 'False')
 
     def test_put_logic(self, notebook):
-        assert 'True' == self.put_to_SoS(notebook, 'true')
-        assert 'False' == self.put_to_SoS(notebook, 'false')
+        assert 'True' == self.put_to_SoS(notebook, '%t')
+        assert 'False' == self.put_to_SoS(notebook, '%f')
 
     def test_get_num_array(self, notebook):
         assert '1' == self.get_from_SoS(notebook, '[1]')
         assert '1\n2' == self.get_from_SoS(notebook, '[1, 2]').replace(' ', '')
         #
-        notebook.call('format short', kernel='Octave')
+        notebook.call('format short', kernel='Scilab')
         assert '1.2300' == self.get_from_SoS(notebook, '[1.23]')
         assert '1.4000\n2.0000' == self.get_from_SoS(notebook,
                                                      '[1.4, 2]').replace(
@@ -86,7 +90,7 @@ class TestOctaveDataExchange(NotebookTest):
     def test_get_numpy_array(self, notebook):
         notebook.call('import numpy as np', kernel='SoS')
         assert '1  2  3' == self.get_from_SoS(notebook, 'np.array([1, 2, 3])')
-        notebook.call('format short', kernel='Octave')
+        notebook.call('format short', kernel='Scilab')
         assert '11.0000    2.1000   32.0000' == self.get_from_SoS(
             notebook, 'np.array([11, 2.1, 32])')
 
@@ -105,7 +109,7 @@ class TestOctaveDataExchange(NotebookTest):
 
     def test_put_logic_array(self, notebook):
         # Note that single element numeric array is treated as single value
-        assert 'True' == self.put_to_SoS(notebook, '[true]')
+        assert 'True' == self.put_to_SoS(notebook, '[%t]')
         assert '[True, False, True]' == self.put_to_SoS(notebook,
                                                         '[true, false, true]')
 
@@ -142,7 +146,7 @@ class TestOctaveDataExchange(NotebookTest):
                                                        "complex(1, 2.2)")
 
     def test_put_complex(self, notebook):
-        assert "(2+3j)" == self.put_to_SoS(notebook, "2+3i")
+        assert "(2+3j)" == self.put_to_SoS(notebook, "2+3*%i")
 
     def test_get_recursive(self, notebook):
         output = self.get_from_SoS(notebook,
@@ -161,41 +165,41 @@ class TestOctaveDataExchange(NotebookTest):
     def test_get_ndarray(self, notebook):
         notebook.call(
             '''\
-            %put var_3d --to Octave
+            %put var_3d --to Scilab
             from numpy import zeros
             var_3d = zeros([2, 3, 4])
         ''',
             kernel='SoS')
         assert ['2', '3', '4'] == notebook.check_output(
-            'disp(size(var_3d))', kernel='Octave').split()
+            'disp(size(var_3d))', kernel='Scilab').split()
 
     def test_put_ndarray(self, notebook):
         notebook.call(
             '''\
-            %put octave_var_3d
-            octave_var_3d = zeros([2, 3, 4])
+            %put Scilab_var_3d
+            Scilab_var_3d = zeros([2, 3, 4])
         ''',
-            kernel='Octave')
+            kernel='Scilab')
         assert '(2, 3, 4)' == notebook.check_output(
-            'octave_var_3d.shape', kernel='SoS')
+            'Scilab_var_3d.shape', kernel='SoS')
 
     def test_get_dataframe(self, notebook):
         notebook.call(
             '''
-            %put df --to Octave
+            %put df --to Scilab
             import pandas as pd
             import numpy as np
             arr = np.random.randn(100)
             df = pd.DataFrame({'column_{0}'.format(i): arr for i in range(10)})
             ''',
             kernel='SoS')
-        output = notebook.check_output('df', kernel='Octave')
+        output = notebook.check_output('df', kernel='Scilab')
         assert 'dataframe' in output and '100 rows' in output
         #
         #  non-numeric dataframe
         notebook.call(
             '''
-            %put df --to Octave
+            %put df --to Scilab
             import pandas as pd
 
             df = pd.DataFrame({'name': ['Leonardo', 'Donatello', 'Michelangelo', 'Raphael'],
@@ -203,5 +207,5 @@ class TestOctaveDataExchange(NotebookTest):
                    'weapon': ['ninjatos', 'bo', 'nunchaku', 'sai']})
             ''',
             kernel='SoS')
-        output = notebook.check_output('df', kernel='Octave')
+        output = notebook.check_output('df', kernel='Scilab')
         assert 'dataframe' in output and '4 rows' in output and '3 columns' in output and 'Michelangelo' in output

@@ -13,8 +13,8 @@ import pytest
 
 
 @pytest.mark.skipif(
-    not shutil.which('octave'), reason='Octave is not available')
-class TestOctaveInterface(NotebookTest):
+    not shutil.which('scilab'), reason='Scilab is not available')
+class TestScilabInterface(NotebookTest):
 
     #
     # Python 2
@@ -23,9 +23,9 @@ class TestOctaveInterface(NotebookTest):
         '''test color of input and output prompt'''
         idx = notebook.call(
             '''\
-            disp('this is Octave')
+            disp('this is Scilab')
             ''',
-            kernel="Octave")
+            kernel="Scilab")
         assert [223, 248, 251] == notebook.get_input_backgroundColor(idx)
         assert [223, 248, 251] == notebook.get_output_backgroundColor(idx)
 
@@ -34,12 +34,12 @@ class TestOctaveInterface(NotebookTest):
         output1 = notebook.check_output(
             '''\
             disp(pwd)
-            ''', kernel="Octave")
+            ''', kernel="Scilab")
         notebook.call('%cd ..', kernel="SoS")
         output2 = notebook.check_output(
             '''\
             disp(pwd)
-            ''', kernel="Octave")
+            ''', kernel="Scilab")
         assert len(output1) > len(output2)
         assert output1.startswith(output2)
         #
@@ -50,7 +50,7 @@ class TestOctaveInterface(NotebookTest):
         output = notebook.check_output(
             '''\
             disp(pwd)
-            ''', kernel="Octave")
+            ''', kernel="Scilab")
         assert os.path.realpath(tmpdir) == os.path.realpath(output)
 
     # def test_preview(self, notebook):
@@ -60,7 +60,7 @@ class TestOctaveInterface(NotebookTest):
     #         %preview -n var
     #         var = list(range(100))
     #         ''',
-    #         kernel="Octave")
+    #         kernel="Scilab")
     #     # in a normal var output, 100 would be printed. The preview version would show
     #     # type and some of the items in the format of
     #     #   int [1:1000] 1 2 3 4 5 6 7 8 9 10 ...
@@ -69,13 +69,13 @@ class TestOctaveInterface(NotebookTest):
     #     #
     #     # return 'Unknown variable' for unknown variable
     #     assert 'Unknown variable' in notebook.check_output(
-    #         '%preview -n unknown_var', kernel="Octave")
+    #         '%preview -n unknown_var', kernel="Scilab")
     #     #
     #     # return 'Unknown variable for expression
     #     assert 'Unknown variable' in notebook.check_output(
-    #         '%preview -n var[1]', kernel="Octave")
+    #         '%preview -n var[1]', kernel="Scilab")
 
     def test_sessioninfo(self, notebook):
         '''test support for %sessioninfo'''
-        notebook.call("disp('this is Octave')", kernel="Octave")
-        assert 'Octave' in notebook.check_output('%sessioninfo', kernel="SoS")
+        notebook.call("disp('this is Scilab')", kernel="Scilab")
+        assert 'Scilab' in notebook.check_output('%sessioninfo', kernel="SoS")
