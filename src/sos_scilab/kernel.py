@@ -174,7 +174,7 @@ endfunction
 
 class sos_scilab:
     supported_kernels = {'Scilab': ['scilab']}
-    background_color = '#8ee7f1'
+    background_color = '#0078c1'
     options = {}
     cd_command = 'cd {dir}'
 
