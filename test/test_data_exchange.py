@@ -27,7 +27,8 @@ class TestScilabDataExchange(NotebookTest):
             disp({var_name})
             ''',
             kernel='Scilab')
-        output = output[output.rindex('\n  '):-1] #index of rnew line and strip space and return output
+        output = output[output.rindex('\n'):-1].strip() #index of rnew line and strip space and return output
+        return output
 
     def put_to_SoS(self, notebook, sos_py_repr):
         var_name = self._var_name()
@@ -49,10 +50,10 @@ class TestScilabDataExchange(NotebookTest):
 
     #failed 
     def test_get_int(self, notebook): 
-        assert 123 == int(self.get_from_SoS(notebook, '123'))
+        assert 123 == self.get_from_SoS(notebook, '123')
         assert '1234567891234' == self.get_from_SoS(notebook, '1234567891234')
         #above: scientific notation for 1.2346e..12?
-
+    # scilab outputs 1.235D+12 for 1234567891234
     #failed    
     def test_put_int(self, notebook):
         assert 123 == int(self.put_to_SoS(notebook, '123'))
@@ -60,17 +61,18 @@ class TestScilabDataExchange(NotebookTest):
         # rounding error occurs
         assert 123456789123456784 == int(
             self.put_to_SoS(notebook, '123456789123456789'))
-    #failed format["e"] invalid
+    #failed: TypeError: float() argumentmust be a string or number not 'NoneType'
     def test_get_double(self, notebook):
         val = str(random.random())
-        notebook.call('format("e")', kernel='Scilab')
+        notebook.call('format("v")', kernel='Scilab')
         assert abs(float(val) - float(self.get_from_SoS(notebook, val))) < 1e-10
     #failed
     def test_put_double(self, notebook):
         val = str(random.random())
         notebook.call('format long', kernel='Scilab')
         assert abs(float(val) - float(self.put_to_SoS(notebook, val))) < 1e-10
-
+    
+    # failed: assert 'T' == None
     def test_get_logic(self, notebook):
         assert 'T' == self.get_from_SoS(notebook, 'True')
         assert 'F' == self.get_from_SoS(notebook, 'False')
@@ -115,6 +117,8 @@ class TestScilabDataExchange(NotebookTest):
         assert '[True, False, True]' == self.put_to_SoS(notebook,
                                                         r'[%t, %f, %t]')
     #failed 'ab c d' == '"ab c d"'
+    # Invalid statements: SyntaxError('invalid syntax', ('<string>', 1, 11, 'var1 = ab c d\n')). 
+
     def test_get_str(self, notebook):
         assert "ab c d" == self.get_from_SoS(notebook, "ab c d")
         assert "ab\\td" == self.get_from_SoS(notebook, r"'ab\td'")
@@ -148,7 +152,7 @@ class TestScilabDataExchange(NotebookTest):
                                                        "complex(1, 2.2)")
 
     def test_put_complex(self, notebook):
-        assert "(2+3j)" == self.put_to_SoS(notebook, "2+3*%i")
+        assert "(2+3j)" == self.put_to_SoS(notebook, r"2+3*%i")
 
     def test_get_recursive(self, notebook):
         output = self.get_from_SoS(notebook,
