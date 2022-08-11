@@ -27,7 +27,7 @@ class TestScilabDataExchange(NotebookTest):
             disp({var_name})
             ''',
             kernel='Scilab')
-        output = output[output.rindex('\n'):-1].strip() #index of rnew line and strip space and return output
+        # output = output[output.rindex('\n'):-1].strip() #index of rnew line and strip space and return output
         return output
 
     def put_to_SoS(self, notebook, sos_py_repr):
@@ -43,7 +43,7 @@ class TestScilabDataExchange(NotebookTest):
     #failed - outputs  \n\n...n\n\n\n   Nan
     # passed with rindex['\n  ']:-1
     def test_get_none(self, notebook): 
-        assert None == self.get_from_SoS(notebook, 'None')
+        assert 'Nan' == self.get_from_SoS(notebook, 'None')
 
     def test_put_NaN(self, notebook):
         assert 'None' == self.put_to_SoS(notebook, r'%nan')
@@ -57,6 +57,7 @@ class TestScilabDataExchange(NotebookTest):
     #failed    
     def test_put_int(self, notebook):
         assert 123 == int(self.put_to_SoS(notebook, '123'))
+        notebook.call('format("v")', kernel='Scilab')
         assert 1234567891234 == int(self.put_to_SoS(notebook, '1234567891234'))
         # rounding error occurs
         assert 123456789123456784 == int(
