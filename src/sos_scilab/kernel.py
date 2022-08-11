@@ -35,7 +35,7 @@ function [repr] = sos_py_repr (obj)
 // % int32 32-bit signed integer array
 // % uint32 32-bit unsigned integer array
 // % int64 64-bit signed integer array
-// % uint64 64-bit unsigned integer array 
+// % uint64 64-bit unsigned integer array
 if type(obj) == 1
     // isscalar(A) returns logical 1 (true) if size(A) returns [1 1], and logical 0 (false) otherwise.
     //done
@@ -142,7 +142,7 @@ elseif type(obj)==4
         for i = obj
             repr = strcat([repr, sos_py_repr(i), ',']);
         end
-        repr = strcat([repr,']']); 
+        repr = strcat([repr,']']);
     end
 
 // % table, table usually is also real, and can be a vector and matrix sometimes, so it needs to be put in front of them.
@@ -210,7 +210,7 @@ class sos_scilab:
             return 'getfield(loadmatfile(fullfile(' + '\'' + dic + '\'' + ',' \
                 + '\'dict2mtlb.mat\')), \'obj\')'
 
-        # does scilab have sets? 
+        # does scilab have sets?
         elif isinstance(obj, set):
             return '{' + ','.join(self._scilab_repr(x) for x in obj) + '}'
         elif isinstance(obj, (
@@ -233,7 +233,7 @@ class sos_scilab:
         elif isinstance(obj, np.matrixlib.defmatrix.matrix):
             dic = tempfile.tempdir
             os.chdir(dic)
-            
+
             #need struct2cell alternative
             sio.savemat('mat2mtlb.mat', {'obj': obj})
             return 'cell2mat(struct2cell(loadmatfile(fullfile(' + '\'' + dic + '\'' + ',' \
@@ -241,7 +241,7 @@ class sos_scilab:
         elif isinstance(obj, np.ndarray):
             dic = tempfile.tempdir
             os.chdir(dic)
-            
+
             sio.savemat('ary2mtlb.mat', {'obj': obj})
             return 'sos_load_obj(fullfile(' + '\'' + dic + '\'' + ',' \
                 + '\'ary2mtlb.mat\'))'
@@ -291,7 +291,7 @@ class sos_scilab:
         result = {}
         for item in items:
             py_repr = 'disp(sos_py_repr({}))'.format(item)
-            
+
             #9 scilab can use multiple messages for standard output,
             # so we need to concatenate these outputs.
             expr = ''
@@ -304,7 +304,8 @@ class sos_scilab:
                     # imported to be used by eval
                     from scipy.io import loadmat
                 # evaluate as raw string to correctly handle \\ etc
-                result[item] = eval(expr[expr.index('\n  ') + 4:expr.rindex('\r\n')-3])
+                expr = expr[expr.index('\n  ') + 4:expr.rindex('\r\n')-3]
+                result[item] = eval(expr)
             except Exception as e:
                 self.sos_kernel.warn('Failed to evaluate {!r}: {}'.format(
                     expr, e))
