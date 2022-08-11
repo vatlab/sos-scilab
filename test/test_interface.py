@@ -49,7 +49,7 @@ class TestScilabInterface(NotebookTest):
         notebook.call(f'%cd {tmpdir}', kernel="SoS")
         output = notebook.check_output(
             '''\
-            disp(pwd)
+            disp(pwd())
             ''', kernel="Scilab")
         assert os.path.realpath(tmpdir) == os.path.realpath(output)
 
