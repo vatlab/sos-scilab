@@ -173,8 +173,8 @@ endfunction
 
 
 class sos_scilab:
-    supported_kernels = {'scilab': ['scilab']}
-    background_color = {'scilab': '#8ee7f1'}
+    supported_kernels = {'Scilab': ['scilab']}
+    background_color = '#8ee7f1'
     options = {}
     cd_command = 'cd {dir}'
 
@@ -193,7 +193,6 @@ class sos_scilab:
         elif isinstance(obj, Sequence):
             if len(obj) == 0:
                 return '[]'
-
             # if the data is of homogeneous type, let us use []
 
             if homogeneous_type(obj):
@@ -290,7 +289,7 @@ class sos_scilab:
 
         result = {}
         for item in items:
-            py_repr = 'disp(sos_py_repr({}))'.format(item)
+            py_repr = 'sos_py_repr({})'.format(item)
 
             #9 scilab can use multiple messages for standard output,
             # so we need to concatenate these outputs.
@@ -307,7 +306,7 @@ class sos_scilab:
                 expr = expr[expr.index('\n  ') + 4:expr.rindex('\r\n')-3]
                 result[item] = eval(expr)
             except Exception as e:
-                self.sos_kernel.warn('Failed to evaluate {!r}: {}'.format(
+                self.sos_kernel.warn('Failed to evaluate {!r}:\n {}'.format(
                     expr, e))
         return result
 

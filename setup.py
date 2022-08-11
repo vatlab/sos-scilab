@@ -44,6 +44,6 @@ setup(name = "sos-scilab",
       ],
     entry_points= '''
 [sos_languages]
-scilab = sos_scilab.kernel:sos_scilab
+Scilab = sos_scilab.kernel:sos_scilab
 '''
 )
