@@ -2,7 +2,7 @@
 #
 # Copyright (c) Bo Peng and the University of Texas MD Anderson Cancer Center
 # Distributed under the terms of the 3-clause BSD License.
-
+import re
 from sos_notebook.test_utils import NotebookTest
 import random
 
@@ -26,11 +26,12 @@ class TestScilabDataExchange(NotebookTest):
         output = notebook.check_output(
             f'''\
             %get {var_name}
-            disp({var_name})
+            {var_name}
             ''',
             kernel='Scilab')
-        # output = output[output.rindex('\n'):-1].strip() #index of rnew line and strip space and return output
-        return output
+        # remove potential escape sequence
+        output = re.sub(r'(?:\x1B[@-_]|[\x80-\x9F])[0-?]*[ -/]*[@-~]', '', output)
+        return re.sub(r'[\b\r\n]*', ' ', output).split('=')[-1].strip()
 
     def put_to_SoS(self, notebook, sos_py_repr):
         var_name = self._var_name()
@@ -51,7 +52,7 @@ class TestScilabDataExchange(NotebookTest):
         assert 'None' == self.put_to_SoS(notebook, r'%nan')
 
     def test_get_int(self, notebook):
-        assert 123 == self.get_from_SoS(notebook, '123')
+        assert '123.' == self.get_from_SoS(notebook, '123')
 
     @pytest.mark.xfail(reason='scilab outputs 1.235D+12 for 1234567891234')
     def test_get_large_int(self, notebook):

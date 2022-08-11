@@ -26,8 +26,8 @@ class TestScilabInterface(NotebookTest):
             disp('this is Scilab')
             ''',
             kernel="Scilab")
-        assert [0, 120, 193] == notebook.get_input_backgroundColor(idx)
-        assert [0, 120, 193] == notebook.get_output_backgroundColor(idx)
+        assert [75, 187, 255] == notebook.get_input_backgroundColor(idx)
+        assert [75, 187, 255] == notebook.get_output_backgroundColor(idx)
 
     def test_cd(self, notebook):
         '''Support for change of directory with magic %cd'''
