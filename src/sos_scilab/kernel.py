@@ -189,6 +189,9 @@ class sos_scilab:
         if isinstance(obj, bool):
             return r'%t' if obj else r'%f'
         elif isinstance(obj, (int, float, str, complex)):
+            if isinstance(obj, complex):
+                return str(obj.real) + str(obj.imag) + r'*%i'
+                
             return repr(obj)
         elif isinstance(obj, Sequence):
             if len(obj) == 0:
@@ -243,7 +246,7 @@ class sos_scilab:
 
             sio.savemat('ary2mtlb.mat', {'obj': obj})
             return 'loadmatfile(fullfile(' + '\'' + dic + '\'' + ',' \
-                + '\'ary2mtlb.mat\')).obj'
+                + '\'ary2mtlb.mat\'), "obj")'
         elif isinstance(obj, pd.DataFrame):
             if self.kernel_name == 'scilab':
                 dic = tempfile.tempdir
