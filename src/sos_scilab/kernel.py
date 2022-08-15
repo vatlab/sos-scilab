@@ -242,8 +242,8 @@ class sos_scilab:
             os.chdir(dic)
 
             sio.savemat('ary2mtlb.mat', {'obj': obj})
-            return 'sos_load_obj(fullfile(' + '\'' + dic + '\'' + ',' \
-                + '\'ary2mtlb.mat\'))'
+            return 'loadmatfile(fullfile(' + '\'' + dic + '\'' + ',' \
+                + '\'ary2mtlb.mat\')).obj'
         elif isinstance(obj, pd.DataFrame):
             if self.kernel_name == 'scilab':
                 dic = tempfile.tempdir
