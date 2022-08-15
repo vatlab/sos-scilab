@@ -146,7 +146,7 @@ class TestScilabDataExchange(NotebookTest):
     #failed
     def test_put_str_array(self, notebook):
         assert "['a1', 'a2', 'a3cv']" == self.put_to_SoS(
-            notebook, "['a1'; 'a2'; 'a3cv']")
+            notebook, "['a1' 'a2' 'a3cv']")
 
     def test_get_mixed_list(self, notebook):
         output = self.get_from_SoS(notebook, '[2.4, True, "asd"]')
@@ -161,6 +161,7 @@ class TestScilabDataExchange(NotebookTest):
         output = self.get_from_SoS(notebook, "{1.5, 'abc'}")
         assert '1.5' in output or abc in output
 
+    # undefined variable
     def test_get_complex(self, notebook):
         assert "1.0000 + 2.2000i" == self.get_from_SoS(notebook,
                                                        "complex(1, 2.2)")
