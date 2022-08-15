@@ -31,7 +31,7 @@ class TestScilabDataExchange(NotebookTest):
             kernel='Scilab')
         # remove potential escape sequence
         output = re.sub(r'(?:\x1B[@-_]|[\x80-\x9F])[0-?]*[ -/]*[@-~]', '', output)
-        return re.sub(r'[\b\r\n]*', ' ', output).split('=')[-1].strip()
+        return re.sub(r'[\b\r\n]*', '', output).split('=')[-1].strip()
 
     def put_to_SoS(self, notebook, sos_py_repr):
         var_name = self._var_name()
@@ -43,11 +43,11 @@ class TestScilabDataExchange(NotebookTest):
             kernel='Scilab')
         return notebook.check_output(f'print(repr({var_name}))', kernel='SoS')
 
-    #failed - outputs  \n\n...n\n\n\n   Nan
-    # passed with rindex['\n  ']:-1
+    
     def test_get_none(self, notebook):
         assert 'Nan' == self.get_from_SoS(notebook, 'None')
 
+    # assert 'None' == "'None'"
     def test_put_NaN(self, notebook):
         assert 'None' == self.put_to_SoS(notebook, r'%nan')
 
@@ -57,8 +57,8 @@ class TestScilabDataExchange(NotebookTest):
     @pytest.mark.xfail(reason='scilab outputs 1.235D+12 for 1234567891234')
     def test_get_large_int(self, notebook):
         assert '1234567891234' == self.get_from_SoS(notebook, '1234567891234')
-        #above: scientific notation for 1.2346e..12?
-
+        
+    #failed invalid literal for int() with base 10: "'123.000000'"
     def test_put_int(self, notebook):
         assert 123 == int(self.put_to_SoS(notebook, '123'))
         notebook.call('format("v")', kernel='Scilab')
@@ -69,34 +69,33 @@ class TestScilabDataExchange(NotebookTest):
         # rounding error occurs
         assert 123456789123456784 == int(
             self.put_to_SoS(notebook, '123456789123456789'))
-
-    #failed: TypeError: float() argumentmust be a string or number not 'NoneType'
+    #assertion error
     def test_get_double(self, notebook):
         val = str(random.random())
         assert abs(float(val) - float(self.get_from_SoS(notebook, val))) < 1e-10
 
-    #failed
+    #failed could not convert string to float "'0.123432'"
     def test_put_double(self, notebook):
         val = str(random.random())
         assert abs(float(val) - float(self.put_to_SoS(notebook, val))) < 1e-10
 
-    # failed: assert 'T' == None
     def test_get_logic(self, notebook):
         assert 'T' == self.get_from_SoS(notebook, 'True')
         assert 'F' == self.get_from_SoS(notebook, 'False')
 
+    #failed assert "True" == "'True'"
     def test_put_logic(self, notebook):
-        assert 'True' == self.put_to_SoS(notebook, '%t')
-        assert 'False' == self.put_to_SoS(notebook, '%f')
+        assert 'True' == self.put_to_SoS(notebook, r'%t')
+        assert 'False' == self.put_to_SoS(notebook, r'%f')
 
     #failed
     def test_get_num_array(self, notebook):
         assert '1.' == self.get_from_SoS(notebook, '[1]')
-        assert '1\n2' == self.get_from_SoS(notebook, '[1, 2]').replace(' ', '')
+        assert '1.2.' == self.get_from_SoS(notebook, '[1, 2]').replace(' ', '')
 
         notebook.call('format short', kernel='Scilab')
-        assert '1.2300' == self.get_from_SoS(notebook, '[1.23]')
-        assert '1.4000\n2.0000' == self.get_from_SoS(notebook,
+        assert '1.23' == self.get_from_SoS(notebook, '[1.23]')
+        assert '1.42.' == self.get_from_SoS(notebook,
                                                      '[1.4, 2]').replace(
                                                          ' ', '')
 
@@ -111,14 +110,14 @@ class TestScilabDataExchange(NotebookTest):
     def test_put_num_array(self, notebook):
         assert '1' == self.put_to_SoS(notebook, '[1]')
         assert 'array([1, 2])' == self.put_to_SoS(notebook, '[1, 2]')
-        #
+        
         assert '1.23' == self.put_to_SoS(notebook, '[1.23]')
         assert 'array([1.4, 2. ])' == self.put_to_SoS(notebook, '[1.4, 2]')
 
     #failed
     def test_get_logic_array(self, notebook):
-        assert '1' == self.get_from_SoS(notebook, '[True]')
-        assert '1\n0\n1' == self.get_from_SoS(notebook,
+        assert 'T' == self.get_from_SoS(notebook, '[True]')
+        assert 'TFT' == self.get_from_SoS(notebook,
                                               '[True, False, True]').replace(
                                                   ' ', '')
 

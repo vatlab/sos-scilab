@@ -12,7 +12,7 @@ from collections.abc import Sequence
 import tempfile
 from sos.utils import short_repr, env
 from IPython.core.error import UsageError
-
+import re
 
 def homogeneous_type(seq):
     iseq = iter(seq)
@@ -24,7 +24,7 @@ def homogeneous_type(seq):
 
 
 scilab_init_statements = r"""
-function [repr] = sos_py_repr (obj)
+function [repr] = sos_py_repr(obj)
 // % isnumeric(A) returns true if A is a numeric array and false otherwise.
 // % single Single-precision floating-point array
 // % double Double-precision floating-point array
@@ -54,8 +54,8 @@ if type(obj) == 1
         // none
         elseif isnan(obj)
             repr = 'None';
-        else
-            repr = obj;
+        else 
+            repr = sprintf('%f', obj);
         end
     // % isvector(A) returns logical 1 (true) if size(A) returns [1 n] or [n 1] with a nonnegative integer value n, and logical 0 (false) otherwise.
     // DONE!!
@@ -88,10 +88,10 @@ if type(obj) == 1
 
 
 // % char_arr_var
-elseif type(obj)==10 && size(obj) > 1
+elseif type(obj)==10 && size(obj, 'r')>1 != size(obj, 'c')>1
     repr = '[';
-    for i = 1:size(obj, 1)
-        repr = strcat([repr, "r'''", (obj(i, :)), "''',"]);
+    for i = obj
+        repr = strcat([repr, "r''", i, "'',"]);
     end
     repr = strcat([repr,']']);
 
@@ -303,7 +303,9 @@ class sos_scilab:
                     # imported to be used by eval
                     from scipy.io import loadmat
                 # evaluate as raw string to correctly handle \\ etc
-                expr = expr[expr.index('\n  ') + 4:expr.rindex('\r\n')-3]
+                # expr = expr[expr.index('\n  ') + 4:expr.rindex('\r\n')-3]
+                expr = re.sub(r'(?:\x1B[@-_]|[\x80-\x9F])[0-?]*[ -/]*[@-~]', '', expr)
+                expr = re.sub(r'[\b\r\n]*', '', expr).split('=')[-1].strip()
                 result[item] = eval(expr)
             except Exception as e:
                 self.sos_kernel.warn('Failed to evaluate {!r}:\n {}'.format(
