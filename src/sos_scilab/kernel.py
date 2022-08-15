@@ -54,7 +54,7 @@ if type(obj) == 1
         // none
         elseif isnan(obj)
             repr = 'None';
-        else 
+        else
             repr = sprintf('%f', obj);
         end
     // % isvector(A) returns logical 1 (true) if size(A) returns [1 n] or [n 1] with a nonnegative integer value n, and logical 0 (false) otherwise.
@@ -305,8 +305,10 @@ class sos_scilab:
                 # evaluate as raw string to correctly handle \\ etc
                 # expr = expr[expr.index('\n  ') + 4:expr.rindex('\r\n')-3]
                 expr = re.sub(r'(?:\x1B[@-_]|[\x80-\x9F])[0-?]*[ -/]*[@-~]', '', expr)
-                expr = re.sub(r'[\b\r\n]*', '', expr).split('=')[-1].strip()
-                result[item] = eval(expr)
+                expr = re.sub(r'[\b\r\n]*', '', expr).split('=',1)[-1].strip()
+                if not expr.startswith('"') or not expr.endswith('"'):
+                    raise ValueError(f'Invalid return expresion "{expr}"')
+                result[item] = eval(expr[1:-1])
             except Exception as e:
                 self.sos_kernel.warn('Failed to evaluate {!r}:\n {}'.format(
                     expr, e))
