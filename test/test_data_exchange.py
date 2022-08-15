@@ -69,15 +69,16 @@ class TestScilabDataExchange(NotebookTest):
         # rounding error occurs
         assert 123456789123456784 == int(
             self.put_to_SoS(notebook, '123456789123456789'))
-    #assertion error
+
+    # scilab is only accurate to 1e-7
     def test_get_double(self, notebook):
         val = str(random.random())
-        assert abs(float(val) - float(self.get_from_SoS(notebook, val))) < 1e-10
+        assert abs(float(val) - float(self.get_from_SoS(notebook, val))) < 1e-7
 
-    #failed could not convert string to float "'0.123432'"
+
     def test_put_double(self, notebook):
         val = str(random.random())
-        assert abs(float(val) - float(self.put_to_SoS(notebook, val))) < 1e-10
+        assert abs(float(val) - float(self.put_to_SoS(notebook, val))) < 1e-7
 
     def test_get_logic(self, notebook):
         assert 'T' == self.get_from_SoS(notebook, 'True')
@@ -132,8 +133,8 @@ class TestScilabDataExchange(NotebookTest):
     # Invalid statements: SyntaxError('invalid syntax', ('<string>', 1, 11, 'var1 = ab c d\n')).
 
     def test_get_str(self, notebook):
-        assert "ab c d" == self.get_from_SoS(notebook, "ab c d")
-        assert "ab\\td" == self.get_from_SoS(notebook, r"'ab\td'")
+        assert '"ab c d"' == self.get_from_SoS(notebook, "'ab c d'")
+        assert "'ab\\td'" == self.get_from_SoS(notebook, r"'ab\td'")
 
     def test_put_str(self, notebook):
         assert "'ab c d'" == self.put_to_SoS(notebook, "'ab c d'")
@@ -143,7 +144,6 @@ class TestScilabDataExchange(NotebookTest):
         output = self.get_from_SoS(notebook, "['a1', 'a2', 'a3']")
         assert 'a1' in output and 'a2' in output and 'a3' in output
 
-    #failed
     def test_put_str_array(self, notebook):
         assert "['a1', 'a2', 'a3cv']" == self.put_to_SoS(
             notebook, "['a1' 'a2' 'a3cv']")

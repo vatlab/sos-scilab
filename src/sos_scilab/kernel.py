@@ -3,6 +3,7 @@
 # Copyright (c) Bo Peng and the University of Texas MD Anderson Cancer Center
 # Distributed under the terms of the 3-clause BSD License.
 
+import reprlib
 import pandas as pd
 import csv
 import numpy as np
@@ -88,11 +89,12 @@ if type(obj) == 1
 
 
 // % char_arr_var
-elseif type(obj)==10 && size(obj, 'r')>1 != size(obj, 'c')>1
+elseif type(obj)==10 && ((size(obj, 'r')>1) ~= (size(obj, 'c')>1))
     repr = '[';
     for i = obj
         repr = strcat([repr, "r''", i, "'',"]);
     end
+    repr = part(repr, 1:length(repr)-1);
     repr = strcat([repr,']']);
 
 
@@ -190,8 +192,8 @@ class sos_scilab:
             return r'%t' if obj else r'%f'
         elif isinstance(obj, (int, float, str, complex)):
             if isinstance(obj, complex):
-                return str(obj.real) + str(obj.imag) + r'*%i'
-                
+                return repr(obj.real) + repr(obj.imag) + r'*%i'
+
             return repr(obj)
         elif isinstance(obj, Sequence):
             if len(obj) == 0:
