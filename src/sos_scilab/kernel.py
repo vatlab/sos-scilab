@@ -192,7 +192,10 @@ class sos_scilab:
             return r'%t' if obj else r'%f'
         elif isinstance(obj, (int, float, str, complex)):
             if isinstance(obj, complex):
-                return repr(obj.real) + repr(obj.imag) + r'*%i'
+                if obj.imag > 0:
+                    return repr(obj.real) + "+" + repr(obj.imag) + r'*%i'
+                else:
+                    return repr(obj.real) + repr(obj.imag) + r'*%i'
 
             return repr(obj)
         elif isinstance(obj, Sequence):

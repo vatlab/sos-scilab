@@ -78,7 +78,7 @@ class TestScilabDataExchange(NotebookTest):
 
     def test_put_double(self, notebook):
         val = str(random.random())
-        assert abs(float(val) - float(self.put_to_SoS(notebook, val))) < 1e-7
+        assert abs(float(val) - float(self.put_to_SoS(notebook, val))) < 1e-6
 
     def test_get_logic(self, notebook):
         assert 'T' == self.get_from_SoS(notebook, 'True')
@@ -109,7 +109,7 @@ class TestScilabDataExchange(NotebookTest):
             notebook, 'np.array([11, 2.1, 32])')
 
     def test_put_num_array(self, notebook):
-        assert '1' == self.put_to_SoS(notebook, '[1]')
+        assert '1.0' == self.put_to_SoS(notebook, '[1]')
         assert 'array([1, 2])' == self.put_to_SoS(notebook, '[1, 2]')
         
         assert '1.23' == self.put_to_SoS(notebook, '[1.23]')
@@ -134,7 +134,7 @@ class TestScilabDataExchange(NotebookTest):
 
     def test_get_str(self, notebook):
         assert '"ab c d"' == self.get_from_SoS(notebook, "'ab c d'")
-        assert "'ab\\td'" == self.get_from_SoS(notebook, r"'ab\td'")
+        assert '"ab\\td"' == self.get_from_SoS(notebook, r"'ab\td'")
 
     def test_put_str(self, notebook):
         assert "'ab c d'" == self.put_to_SoS(notebook, "'ab c d'")
@@ -150,7 +150,7 @@ class TestScilabDataExchange(NotebookTest):
 
     def test_get_mixed_list(self, notebook):
         output = self.get_from_SoS(notebook, '[2.4, True, "asd"]')
-        assert '2.4' in output and '1' in output and 'asd' in output
+        assert '2.4' in output and r'%t' in output and 'asd' in output
 
     @pytest.mark.skip(reason='loadmatfile crashes')
     def test_get_dict(self, notebook):
@@ -163,7 +163,7 @@ class TestScilabDataExchange(NotebookTest):
 
     # undefined variable
     def test_get_complex(self, notebook):
-        assert "1.0000 + 2.2000i" == self.get_from_SoS(notebook,
+        assert "1. + 2.2i" == self.get_from_SoS(notebook,
                                                        "complex(1, 2.2)")
 
     def test_put_complex(self, notebook):
@@ -199,7 +199,7 @@ class TestScilabDataExchange(NotebookTest):
         notebook.call(
             '''\
             %put Scilab_var_3d
-            Scilab_var_3d = zeros([2, 3, 4])
+            Scilab_var_3d = zeros(2, 3, 4)
         ''',
             kernel='Scilab')
         assert '(2, 3, 4)' == notebook.check_output(
