@@ -72,7 +72,7 @@ if type(obj) == 1
             end
     // ismatrix(V) returns logical 1 (true) if size(V) returns [m n] with nonnegative integer values m and n, and logical 0 (false) otherwise.
     // DONE!
-    elseif size(obj, 'r')>1 && size(obj, 'c')>1
+    elseif size(obj, 'r')>1 && size(obj, 'c')>1 && length(size(obj))==2
         savematfile( TMPDIR + '/mat2py.mat', 'obj', '-v6');
         repr = strcat(['np.matrix(sio.loadmat(r''', TMPDIR, '/mat2py.mat'')', '[''', 'obj', '''])']);
         // outputs: "np.matrix(sio.loadmat(r'/tmp/SCI_TMP_1607379_Bv9sEVmat2py.mat')['obj'])"
@@ -185,7 +185,7 @@ class sos_scilab:
         self.kernel_name = kernel_name
         self.init_statements = scilab_init_statements
 
-    def _scilab_repr(self, obj):
+    def _scilab_repr(self, obj, name=None):
         #  Converting a Python object to a scilab expression that will be executed
         #  by the scilab kernel.
         if isinstance(obj, bool):
@@ -206,20 +206,20 @@ class sos_scilab:
             if homogeneous_type(obj):
                 return '[' + ' '.join(self._scilab_repr(x) for x in obj) + ']'
             else:
-                return '{' + ' '.join(self._scilab_repr(x) for x in obj) + '}'
+                return 'list(' + ' '.join(self._scilab_repr(x) for x in obj) + ')'
         elif obj is None:
             return r'%nan'
         elif isinstance(obj, dict):
             dic = tempfile.tempdir
             os.chdir(dic)
             # change how this is saved to be compatible with scilab
-            sio.savemat('dict2mtlb.mat', {'obj': obj})
+            sio.savemat('dict2mtlb.mat', {'sos_obj__': obj})
             return 'getfield(loadmatfile(fullfile(' + '\'' + dic + '\'' + ',' \
-                + '\'dict2mtlb.mat\')), \'obj\')'
+                + '\'dict2mtlb.mat\')), \'obj\'); ' + name + '=sos_obj__'
 
-        # does scilab have sets?
+        # scilab has no sets, closest equivalent is a list
         elif isinstance(obj, set):
-            return '{' + ','.join(self._scilab_repr(x) for x in obj) + '}'
+            return 'list(' + ','.join(self._scilab_repr(x) for x in obj) + ')'
         elif isinstance(obj, (
                 np.intc,
                 np.intp,
@@ -241,17 +241,17 @@ class sos_scilab:
             dic = tempfile.tempdir
             os.chdir(dic)
 
-            #need struct2cell alternative
-            sio.savemat('mat2mtlb.mat', {'obj': obj})
-            return 'cell2mat(struct2cell(loadmatfile(fullfile(' + '\'' + dic + '\'' + ',' \
-                + '\'mat2mtlb.mat\'))))'
+            #need struct2cell alternative cell2mat(struct2cell(
+            sio.savemat('mat2mtlb.mat', {'sos_obj__': obj})
+            return 'loadmatfile(fullfile(' + '\'' + dic + '\'' + ',' \
+                + '\'mat2mtlb.mat\')); ' + name + '=sos_obj__'
         elif isinstance(obj, np.ndarray):
             dic = tempfile.tempdir
             os.chdir(dic)
 
-            sio.savemat('ary2mtlb.mat', {'obj': obj})
+            sio.savemat('ary2mtlb.mat', {'sos_obj__': obj})
             return 'loadmatfile(fullfile(' + '\'' + dic + '\'' + ',' \
-                + '\'ary2mtlb.mat\'), "obj")'
+                + '\'ary2mtlb.mat\')); ' + name + '=sos_obj__'
         elif isinstance(obj, pd.DataFrame):
             if self.kernel_name == 'scilab':
                 dic = tempfile.tempdir
@@ -282,7 +282,7 @@ class sos_scilab:
                 newname = 'm' + name
             else:
                 newname = name
-            scilab_repr = self._scilab_repr(env.sos_dict[name])
+            scilab_repr = self._scilab_repr(env.sos_dict[name], name=newname)
             env.log_to_file('KERNEL', f'Executing \n{scilab_repr}')
             self.sos_kernel.run_cell(
                 '{} = {}'.format(newname, scilab_repr),

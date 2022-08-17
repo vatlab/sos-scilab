@@ -58,9 +58,9 @@ class TestScilabDataExchange(NotebookTest):
     def test_get_large_int(self, notebook):
         assert '1234567891234' == self.get_from_SoS(notebook, '1234567891234')
         
-    #failed invalid literal for int() with base 10: "'123.000000'"
+    #failed invalid literal for int() with base 10: "123.0"
     def test_put_int(self, notebook):
-        assert 123 == int(self.put_to_SoS(notebook, '123'))
+        assert 123 == int(float(self.put_to_SoS(notebook, '123')))
         notebook.call('format("v")', kernel='Scilab')
 
     @pytest.mark.xfail(reason='scilab outputs 1.235D+12 for 1234567891234')
@@ -105,7 +105,7 @@ class TestScilabDataExchange(NotebookTest):
         notebook.call('import numpy as np', kernel='SoS')
         assert '1  2  3' == self.get_from_SoS(notebook, 'np.array([1, 2, 3])')
         notebook.call('format short', kernel='Scilab')
-        assert '11.0000    2.1000   32.0000' == self.get_from_SoS(
+        assert '11.   2.1   32.' == self.get_from_SoS(
             notebook, 'np.array([11, 2.1, 32])')
 
     def test_put_num_array(self, notebook):
@@ -159,9 +159,8 @@ class TestScilabDataExchange(NotebookTest):
 
     def test_get_set(self, notebook):
         output = self.get_from_SoS(notebook, "{1.5, 'abc'}")
-        assert '1.5' in output or abc in output
+        assert '1.5' in output or 'abc' in output
 
-    # undefined variable
     def test_get_complex(self, notebook):
         assert "1. + 2.2i" == self.get_from_SoS(notebook,
                                                        "complex(1, 2.2)")
@@ -175,6 +174,7 @@ class TestScilabDataExchange(NotebookTest):
                                    "{'a': 1, 'b': {'c': 3, 'd': 'whatever'}}")
         assert 'scalar structure' in output and 'a = 1' in output and 'c = 3' in output and 'd = whatever' in output
 
+    #failed: Assert false
     def test_get_matrix(self, notebook):
         notebook.call('import numpy as np', kernel='SoS')
         output = self.get_from_SoS(notebook, 'np.matrix([[11,22],[33,44]])')
@@ -184,6 +184,7 @@ class TestScilabDataExchange(NotebookTest):
         output = self.put_to_SoS(notebook, '[1:3; 2:4]')
         assert 'matrix' in output and '[1., 2., 3.]' in output and '[2., 3., 4.]]' in output
 
+    # failed - size outputs 0's for some reason
     def test_get_ndarray(self, notebook):
         notebook.call(
             '''\
@@ -192,9 +193,10 @@ class TestScilabDataExchange(NotebookTest):
             var_3d = zeros([2, 3, 4])
         ''',
             kernel='SoS')
-        assert ['2', '3', '4'] == notebook.check_output(
+        assert ['2.', '3.', '4.'] == notebook.check_output(
             'disp(size(var_3d))', kernel='Scilab').split()
 
+    #failed to evaluate: shape too lrge to be a matrix
     def test_put_ndarray(self, notebook):
         notebook.call(
             '''\
